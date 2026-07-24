@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công Cụ Chuyển Đổi Mã Hóa Đơn - CCCD / QHNS</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Compact custom scrollbar */
+        textarea::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans text-xs min-h-screen flex flex-col antialiased selection:bg-blue-100 selection:text-blue-700">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-13 flex items-center justify-between py-2.5">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shadow-blue-500/20">
+                    <i class="fa-solid fa-file-code"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-bold text-slate-900 leading-tight">Công Cụ Chuyển Đổi Mã Template Hóa Đơn</h1>
+                    <p class="text-[11px] text-slate-500">Hỗ trợ định dạng XSLT / HTML (CCCD & Mã ĐVQHNS)</p>
+                </div>
+            </div>
+            
+            <button onclick="fillSampleCode()" class="px-2.5 py-1 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors flex items-center gap-1.5" title="Thêm mã mẫu thử nghiệm">
+                <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                <span>Chèn mã mẫu</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 flex flex-col gap-4">
+
+        <!-- Controls Row: Target Type + Action Trigger -->
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+            
+            <!-- Target Type Radios -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1">
+                <span class="text-xs font-semibold text-slate-700 shrink-0 mr-1 flex items-center gap-1.5">
+                    <i class="fa-solid fa-sliders text-blue-600"></i>
+                    <span>Loại chuyển đổi:</span>
+                </span>
+                
+                <div class="grid grid-cols-2 gap-2 w-full sm:w-auto flex-1 max-w-lg">
+                    <!-- Option CCCD -->
+                    <label for="type_cccd" class="flex items-center p-2 rounded-lg border cursor-pointer transition-all border-blue-600 bg-blue-50/50" id="card_cccd">
+                        <input type="radio" id="type_cccd" name="targetType" value="CCCD" checked class="sr-only" onchange="updateSelectionStyle()">
+                        <div class="w-3.5 h-3.5 rounded-full border border-blue-600 flex items-center justify-center mr-2 shrink-0" id="dot_cccd">
+                            <div class="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                        </div>
+                        <div class="truncate">
+                            <span class="font-bold text-slate-900 text-xs block truncate">Chuyển sang CCCD</span>
+                        </div>
+                    </label>
+
+                    <!-- Option QHNS -->
+                    <label for="type_qhns" class="flex items-center p-2 rounded-lg border cursor-pointer transition-all border-slate-200 bg-white" id="card_qhns">
+                        <input type="radio" id="type_qhns" name="targetType" value="QHNS" class="sr-only" onchange="updateSelectionStyle()">
+                        <div class="w-3.5 h-3.5 rounded-full border border-slate-300 flex items-center justify-center mr-2 shrink-0" id="dot_qhns">
+                            <div class="w-1.5 h-1.5 rounded-full bg-transparent"></div>
+                        </div>
+                        <div class="truncate">
+                            <span class="font-bold text-slate-900 text-xs block truncate">Chuyển sang QHNS</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Action Convert Button & Match Info -->
+            <div class="flex items-center gap-3 border-t md:border-t-0 pt-2.5 md:pt-0 border-slate-100 justify-between md:justify-end">
+                <span id="matchStat" class="text-[11px] font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
+                    Số mục đã đổi: <strong class="text-blue-600 font-bold" id="matchCount">0</strong>
+                </span>
+
+                <button onclick="performConversion()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center gap-1.5 text-xs shrink-0">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    <span>Chuyển đổi ngay</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Code Editors Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            
+            <!-- Input Column -->
+            <div class="flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <!-- Box Header -->
+                <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 text-slate-700 font-semibold text-xs">
+                        <i class="fa-solid fa-code text-slate-500"></i>
+                        <span>Dữ liệu đầu vào (Gốc)</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="pasteFromClipboard()" class="px-2 py-1 text-[11px] text-slate-600 hover:text-blue-600 hover:bg-slate-200/60 rounded transition-colors flex items-center gap-1" title="Dán từ bộ nhớ tạm">
+                            <i class="fa-regular fa-paste"></i>
+                            <span>Dán</span>
+                        </button>
+                        <button onclick="clearAll()" class="px-2 py-1 text-[11px] text-slate-600 hover:text-red-600 hover:bg-slate-200/60 rounded transition-colors flex items-center gap-1" title="Xóa toàn bộ">
+                            <i class="fa-regular fa-trash-can"></i>
+                            <span>Xóa</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Textarea Area -->
+                <div class="relative flex-1 min-h-[320px] flex flex-col">
+                    <textarea 
+                        id="inputCode" 
+                        spellcheck="false" 
+                        placeholder="Dán đoạn mã code XSLT / HTML gốc vào đây..."
+                        class="w-full h-full min-h-[320px] p-3 font-mono text-xs text-slate-800 bg-white border-0 focus:ring-0 focus:outline-none resize-y leading-relaxed"
+                        oninput="updateInputMetrics()"
+                    ></textarea>
+                </div>
+
+                <!-- Footer details -->
+                <div class="px-3 py-1.5 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-400 flex justify-between font-mono">
+                    <span id="inputCharCount">0 ký tự</span>
+                    <span id="inputLineCount">0 dòng</span>
+                </div>
+            </div>
+
+            <!-- Output Column -->
+            <div class="flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <!-- Box Header -->
+                <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 text-slate-700 font-semibold text-xs">
+                        <i class="fa-solid fa-file-export text-emerald-600"></i>
+                        <span>Kết quả sau chuyển đổi</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="copyOutput()" class="px-2 py-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 transition-colors flex items-center gap-1">
+                            <i class="fa-regular fa-copy"></i>
+                            <span>Sao chép</span>
+                        </button>
+                        <button onclick="downloadOutput()" class="px-2 py-1 text-[11px] text-slate-600 hover:text-blue-600 hover:bg-slate-200/60 rounded transition-colors flex items-center gap-1" title="Tải file về máy">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Tải về</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Textarea Area -->
+                <div class="relative flex-1 min-h-[320px] flex flex-col">
+                    <textarea 
+                        id="outputCode" 
+                        readonly 
+                        spellcheck="false" 
+                        placeholder="Nhấn 'Chuyển đổi ngay' để xem kết quả tại đây..."
+                        class="w-full h-full min-h-[320px] p-3 font-mono text-xs text-emerald-950 bg-slate-50/50 border-0 focus:ring-0 focus:outline-none resize-y leading-relaxed"
+                    ></textarea>
+                </div>
+
+                <!-- Footer details -->
+                <div class="px-3 py-1.5 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-400 flex justify-between font-mono">
+                    <span id="outputCharCount">0 ký tự</span>
+                    <span id="outputLineCount">0 dòng</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Transformation Rules Table -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            <h2 class="text-xs font-bold text-slate-800 mb-2.5 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-info text-blue-500"></i>
+                <span>Bảng quy tắc thay thế đối chiếu:</span>
+            </h2>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-[11px] text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 border-b border-slate-200 text-slate-700">
+                            <th class="p-2 font-semibold">Thành phần / Thuộc tính</th>
+                            <th class="p-2 font-semibold">Mã gốc trong đoạn code</th>
+                            <th class="p-2 font-semibold text-blue-700 bg-blue-50/60">Khi chọn CCCD</th>
+                            <th class="p-2 font-semibold text-purple-700 bg-purple-50/60">Khi chọn QHNS</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-mono text-[11px]">
+                        <!-- MST Rules -->
+                        <tr>
+                            <td class="p-2 font-sans text-slate-700">Div ID Container (MST)</td>
+                            <td class="p-2 text-slate-600">MST_NMuaXsl</td>
+                            <td class="p-2 text-blue-700 bg-blue-50/20">CCCD_NMuaXsl</td>
+                            <td class="p-2 text-purple-700 bg-purple-50/20">MDVQHNSach_NMuaXsl</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2 font-sans text-slate-700">Nhãn Tiếng Việt (MST)</td>
+                            <td class="p-2 text-slate-600">Mã số thuế</td>
+                            <td class="p-2 text-blue-700 bg-blue-50/20">Căn cước công dân</td>
+                            <td class="p-2 text-purple-700 bg-purple-50/20">Mã đơn vị quan hệ ngân sách</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2 font-sans text-slate-700">Nhãn Tiếng Anh (MST)</td>
+                            <td class="p-2 text-slate-600">Tax code</td>
+                            <td class="p-2 text-blue-700 bg-blue-50/20">Citizen ID</td>
+                            <td class="p-2 text-purple-700 bg-purple-50/20">Budget unit code</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2 font-sans text-slate-700">XML Tag Path (MST)</td>
+                            <td class="p-2 text-slate-600">DLHDon/NDHDon/NMua/MST</td>
+                            <td class="p-2 text-blue-700 bg-blue-50/20">DLHDon/NDHDon/NMua/CCCDan</td>
+                            <td class="p-2 text-purple-700 bg-purple-50/20">DLHDon/NDHDon/NMua/MDVQHNSach</td>
+                        </tr>
+
+                        <!-- DChi Rules -->
+                        <tr class="bg-amber-50/20">
+                            <td class="p-2 font-sans text-slate-700">Div ID Container (Địa chỉ)</td>
+                            <td class="p-2 text-slate-600">DChi_NMuaXsl</td>
+                            <td class="p-2 text-blue-700 bg-blue-50/20">CCCD_NMuaXsl</td>
+                            <td class="p-2 text-purple-700 bg-purple-50/20">MDVQHNSach_NMuaXsl</td>
+                        </tr>
+                        <tr class="bg-amber-50/20">
+                            <td class="p-2 font-sans text-slate-700">Nhãn Tiếng Việt (Địa chỉ)</td>
+                            <td class="p-2 text-slate-600">Địa chỉ</td>
+                            <td class="p-2 text-blue-700 bg-blue-50/20">Căn cước công dân</td>
+                            <td class="p-2 text-purple-700 bg-purple-50/20">Mã đơn vị quan hệ ngân sách</td>
+                        </tr>
+                        <tr class="bg-amber-50/20">
+                            <td class="p-2 font-sans text-slate-700">Nhãn Tiếng Anh (Địa chỉ)</td>
+                            <td class="p-2 text-slate-600">Address</td>
+                            <td class="p-2 text-blue-700 bg-blue-50/20">Citizen ID</td>
+                            <td class="p-2 text-purple-700 bg-purple-50/20">Budget unit code</td>
+                        </tr>
+                        <tr class="bg-amber-50/20">
+                            <td class="p-2 font-sans text-slate-700">XML Tag Path (Địa chỉ)</td>
+                            <td class="p-2 text-slate-600">DLHDon/NDHDon/NMua/DChi</td>
+                            <td class="p-2 text-blue-700 bg-blue-50/20">DLHDon/NDHDon/NMua/CCCDan</td>
+                            <td class="p-2 text-purple-700 bg-purple-50/20">DLHDon/NDHDon/NMua/MDVQHNSach</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-2 font-sans">* Cấu trúc HTML, thẻ bao ngoài, style inline, class và các giá trị đệm đều được giữ nguyên chính xác 100%.</p>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 mt-auto py-2.5 text-center text-[11px] text-slate-500">
+        <p>Công cụ chuyển đổi mã template hóa đơn điện tử XSLT/HTML &bull; Nhanh chóng &bull; Chính xác &bull; An toàn</p>
+    </footer>
+
+    <!-- Toast Notification Element -->
+    <div id="toast" class="fixed bottom-4 right-4 z-50 transform translate-y-20 opacity-0 transition-all duration-200 pointer-events-none">
+        <div class="bg-slate-900 text-white px-3 py-2 rounded-lg shadow-lg flex items-center gap-2 text-xs">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+            <span id="toastMsg">Thông báo</span>
+        </div>
+    </div>
+
+    <script>
+        // Sample code stored for user test on request
+        const TEST_SAMPLE = `</div>
+					<div id="DChi_NMuaXsl" class="thongTinNguoiMua" style="width: 100%; float: left; background: transparent;">
+						<span class="chinhSua dp-tc wsn label" id="chinhSua161" style="background-color: initial; font-size: 14px; font-weight: 700; font-style: normal; text-decoration: none; color: rgb(0, 0, 0); border-width: 1px;">Địa chỉ</span>
+						<span class="chinhSua dp-tc wsn songNgu" id="chinhSua162" style="background-color: initial; font-size: 13px; font-weight: 400; font-style: italic; text-decoration: none; color: rgb(0, 0, 0); border-width: 1px;">(Address)</span>
+						<span class="chinhSua dp-tc two-dot" id="chinhSua163" style="background-color: initial; font-size: 13px; font-weight: 400; text-decoration: none; color: rgb(0, 0, 0); border-width: 1px;">:</span>
+						<span class="chinhSua dp-tc w100 value" id="chinhSua164" style="background-color: initial; font-size: 14px; font-weight: 400; font-style: normal; text-decoration: none; color: rgb(0, 0, 0); border-width: 1px;">
+							<xsl:value-of select="DLHDon/NDHDon/NMua/DChi"/>
+						</span>`;
+
+        // Update card styles on radio selection
+        function updateSelectionStyle() {
+            const isCCCD = document.getElementById('type_cccd').checked;
+            const cardCCCD = document.getElementById('card_cccd');
+            const cardQHNS = document.getElementById('card_qhns');
+            const dotCCCD = document.getElementById('dot_cccd').firstElementChild;
+            const dotQHNS = document.getElementById('dot_qhns').firstElementChild;
+
+            if (isCCCD) {
+                cardCCCD.className = "flex items-center p-2 rounded-lg border cursor-pointer transition-all border-blue-600 bg-blue-50/50";
+                cardQHNS.className = "flex items-center p-2 rounded-lg border cursor-pointer transition-all border-slate-200 bg-white";
+                dotCCCD.className = "w-1.5 h-1.5 rounded-full bg-blue-600";
+                dotQHNS.className = "w-1.5 h-1.5 rounded-full bg-transparent";
+            } else {
+                cardQHNS.className = "flex items-center p-2 rounded-lg border cursor-pointer transition-all border-purple-600 bg-purple-50/50";
+                cardCCCD.className = "flex items-center p-2 rounded-lg border cursor-pointer transition-all border-slate-200 bg-white";
+                dotQHNS.className = "w-1.5 h-1.5 rounded-full bg-purple-600";
+                dotCCCD.className = "w-1.5 h-1.5 rounded-full bg-transparent";
+            }
+        }
+
+        // Main core conversion trigger on button click
+        function performConversion() {
+            const input = document.getElementById('inputCode').value;
+            const targetType = document.querySelector('input[name="targetType"]:checked').value;
+            const outputTextarea = document.getElementById('outputCode');
+
+            if (!input.trim()) {
+                outputTextarea.value = '';
+                updateOutputMetrics('', 0);
+                showToast('Vui lòng nhập dữ liệu code đầu vào trước!', true);
+                return;
+            }
+
+            let result = input;
+            let totalMatches = 0;
+
+            if (targetType === 'CCCD') {
+                // Rule set for CCCD
+                result = replaceWithCount(result, 'MST_NMuaXsl', 'CCCD_NMuaXsl', c => totalMatches += c);
+                result = replaceWithCount(result, 'DChi_NMuaXsl', 'CCCD_NMuaXsl', c => totalMatches += c);
+
+                result = replaceWithCount(result, 'Mã số thuế', 'Căn cước công dân', c => totalMatches += c);
+                result = replaceWithCount(result, 'Địa chỉ', 'Căn cước công dân', c => totalMatches += c);
+
+                result = replaceWithCount(result, 'Tax code', 'Citizen ID', c => totalMatches += c);
+                result = replaceWithCount(result, 'Address', 'Citizen ID', c => totalMatches += c);
+
+                result = replaceWithCount(result, 'DLHDon/NDHDon/NMua/MST', 'DLHDon/NDHDon/NMua/CCCDan', c => totalMatches += c);
+                result = replaceWithCount(result, 'DLHDon/NDHDon/NMua/DChi', 'DLHDon/NDHDon/NMua/CCCDan', c => totalMatches += c);
+
+            } else if (targetType === 'QHNS') {
+                // Rule set for QHNS
+                result = replaceWithCount(result, 'MST_NMuaXsl', 'MDVQHNSach_NMuaXsl', c => totalMatches += c);
+                result = replaceWithCount(result, 'DChi_NMuaXsl', 'MDVQHNSach_NMuaXsl', c => totalMatches += c);
+
+                result = replaceWithCount(result, 'Mã số thuế', 'Mã đơn vị quan hệ ngân sách', c => totalMatches += c);
+                result = replaceWithCount(result, 'Địa chỉ', 'Mã đơn vị quan hệ ngân sách', c => totalMatches += c);
+
+                result = replaceWithCount(result, 'Tax code', 'Budget unit code', c => totalMatches += c);
+                result = replaceWithCount(result, 'Address', 'Budget unit code', c => totalMatches += c);
+
+                result = replaceWithCount(result, 'DLHDon/NDHDon/NMua/MST', 'DLHDon/NDHDon/NMua/MDVQHNSach', c => totalMatches += c);
+                result = replaceWithCount(result, 'DLHDon/NDHDon/NMua/DChi', 'DLHDon/NDHDon/NMua/MDVQHNSach', c => totalMatches += c);
+            }
+
+            outputTextarea.value = result;
+            updateOutputMetrics(result, totalMatches);
+            
+            if (totalMatches > 0) {
+                showToast(`Chuyển đổi thành công! Đã thay đổi ${totalMatches} vị trí.`);
+            } else {
+                showToast(`Không tìm thấy đoạn mã nào khớp với quy tắc!`, true);
+            }
+        }
+
+        // String replace helper counting matched occurrences
+        function replaceWithCount(source, searchStr, replaceStr, onCount) {
+            if (!searchStr) return source;
+            const regex = new RegExp(escapeRegExp(searchStr), 'g');
+            const matches = source.match(regex);
+            if (matches) {
+                onCount(matches.length);
+            }
+            return source.replaceAll(searchStr, replaceStr);
+        }
+
+        function escapeRegExp(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Metrics update helpers
+        function updateInputMetrics() {
+            const val = document.getElementById('inputCode').value;
+            const lines = val ? val.split('\n').length : 0;
+            document.getElementById('inputCharCount').textContent = `${val.length} ký tự`;
+            document.getElementById('inputLineCount').textContent = `${lines} dòng`;
+        }
+
+        function updateOutputMetrics(result, matches) {
+            const lines = result ? result.split('\n').length : 0;
+            document.getElementById('outputCharCount').textContent = `${result.length} ký tự`;
+            document.getElementById('outputLineCount').textContent = `${lines} dòng`;
+            document.getElementById('matchCount').textContent = matches;
+        }
+
+        // Actions
+        function fillSampleCode() {
+            document.getElementById('inputCode').value = TEST_SAMPLE;
+            updateInputMetrics();
+            showToast('Đã thêm mã mẫu vào ô nhập!');
+        }
+
+        function clearAll() {
+            document.getElementById('inputCode').value = '';
+            document.getElementById('outputCode').value = '';
+            updateInputMetrics();
+            updateOutputMetrics('', 0);
+            showToast('Đã xóa dữ liệu!');
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    document.getElementById('inputCode').value = text;
+                    updateInputMetrics();
+                    showToast('Đã dán dữ liệu từ clipboard!');
+                }
+            } catch (err) {
+                showToast('Không thể đọc từ clipboard!', true);
+            }
+        }
+
+        function copyOutput() {
+            const text = document.getElementById('outputCode').value;
+            if (!text) {
+                showToast('Không có dữ liệu kết quả để chép!', true);
+                return;
+            }
+
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Đã sao chép kết quả vào Clipboard!');
+            } catch (e) {
+                showToast('Lỗi khi sao chép!', true);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function downloadOutput() {
+            const text = document.getElementById('outputCode').value;
+            if (!text) {
+                showToast('Không có dữ liệu để tải về!', true);
+                return;
+            }
+            const targetType = document.querySelector('input[name="targetType"]:checked').value;
+            const filename = `converted_${targetType.toLowerCase()}_snippet.xslt`;
+
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+            element.setAttribute('download', filename);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            showToast(`Đã tải xuống file ${filename}`);
+        }
+
+        // Toast notification system
+        let toastTimeout;
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = msg;
+            
+            if (isError) {
+                toastIcon.className = "fa-solid fa-triangle-exclamation text-amber-400";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
